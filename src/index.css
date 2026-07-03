@@ -1,0 +1,15 @@
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@variable&display=swap');
+@import "tailwindcss";
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: #ECECE8;
+  overflow-x: hidden;
+  font-family: "Satoshi Variable", "Satoshi", sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
