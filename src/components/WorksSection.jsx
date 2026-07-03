@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, useMotionValue, animate } from "framer-motion";
 import { projects } from "../data/projects";
 
 function WorksSection() {
   const [activeId, setActiveId] = useState(null);
   const [currentImage, setCurrentImage] = useState(null);
+  const [isTouch, setIsTouch] = useState(false);
 
   const sectionRef = useRef(null);
 
@@ -12,6 +13,15 @@ function WorksSection() {
   const y = useMotionValue(0);
   const opacity = useMotionValue(0);
   const scale = useMotionValue(0.95);
+
+  // Detect touch/coarse-pointer devices (Android phones/tablets) once on mount
+  useEffect(() => {
+    const mq = window.matchMedia("(pointer: coarse)");
+    setIsTouch(mq.matches);
+    const handler = (e) => setIsTouch(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -32,19 +42,27 @@ function WorksSection() {
     return () => observer.disconnect();
   }, [opacity, scale]);
 
-  const handleMouseMove = (e) => {
-    animate(x, e.clientX - 60, {
-      type: "spring",
-      stiffness: 80,
-      damping: 20,
-    });
+  // Skip the expensive mousemove spring-follow entirely on touch devices —
+  // the floating preview panel is desktop-only (hidden md:block) anyway,
+  // so this saves needless work/jank on Android.
+  const handleMouseMove = useCallback(
+    (e) => {
+      if (isTouch) return;
 
-    animate(y, e.clientY - 40, {
-      type: "spring",
-      stiffness: 80,
-      damping: 20,
-    });
-  };
+      animate(x, e.clientX - 60, {
+        type: "spring",
+        stiffness: 80,
+        damping: 20,
+      });
+
+      animate(y, e.clientY - 40, {
+        type: "spring",
+        stiffness: 80,
+        damping: 20,
+      });
+    },
+    [isTouch, x, y]
+  );
 
   const handleEnter = (project) => {
     setActiveId(project.id);
@@ -67,14 +85,20 @@ function WorksSection() {
     });
   };
 
+  // Touch equivalent: tapping a row toggles the background-reveal effect
+  // (the image preview stays desktop-only, since it's hidden on mobile viewports)
+  const handleTouch = (project) => {
+    setActiveId((prev) => (prev === project.id ? null : project.id));
+  };
+
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-screen bg-[#ECECE8] text-black px-5 py-6 pt-[770px]"
+      className="relative min-h-screen bg-[#ECECE8] text-black px-5 py-6 pt-[300px] md:pt-[770px] overflow-x-hidden"
       onMouseMove={handleMouseMove}
       onMouseLeave={handleLeave}
     >
-      <h1 className="text-[92px] font-[300] tracking-[-4px] leading-none">
+      <h1 className="text-[56px] sm:text-[72px] md:text-[92px] font-[300] tracking-[-2px] md:tracking-[-4px] leading-none">
         MY WORKS
       </h1>
 
@@ -87,8 +111,9 @@ function WorksSection() {
           return (
             <div
               key={project.id}
-              onMouseEnter={() => handleEnter(project)}
-              className="relative h-[96px] px-4 py-5 cursor-pointer overflow-hidden"
+              onMouseEnter={() => !isTouch && handleEnter(project)}
+              onClick={() => isTouch && handleTouch(project)}
+              className="relative h-[96px] px-4 py-5 cursor-pointer overflow-hidden touch-manipulation"
             >
               <motion.div
                 className="absolute inset-0 bg-[#4E5564]"
@@ -108,7 +133,7 @@ function WorksSection() {
                 }`}
               >
                 <div className="flex justify-between items-center">
-                  <h2 className="text-[31px] font-[500] leading-none tracking-[-0.5px]">
+                  <h2 className="text-[24px] sm:text-[28px] md:text-[31px] font-[500] leading-none tracking-[-0.5px]">
                     {project.title}
                   </h2>
                   <span className="text-[26px]">↗</span>
