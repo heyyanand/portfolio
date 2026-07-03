@@ -9,12 +9,17 @@ function WorksSection() {
 
   const sectionRef = useRef(null);
 
+  // Desktop mouse-follow preview (unchanged)
   const x = useMotionValue(0);
   const y = useMotionValue(0);
   const opacity = useMotionValue(0);
   const scale = useMotionValue(0.95);
 
-  // Detect touch/coarse-pointer devices (Android phones/tablets) once on mount
+  // Separate motion values for the mobile preview so desktop's
+  // mouse-follow animation logic is never touched or shared
+  const mOpacity = useMotionValue(0);
+  const mScale = useMotionValue(0.95);
+
   useEffect(() => {
     const mq = window.matchMedia("(pointer: coarse)");
     setIsTouch(mq.matches);
@@ -30,6 +35,8 @@ function WorksSection() {
           setActiveId(null);
           animate(opacity, 0, { duration: 0.25 });
           animate(scale, 0.95, { duration: 0.25 });
+          animate(mOpacity, 0, { duration: 0.25 });
+          animate(mScale, 0.95, { duration: 0.25 });
         }
       },
       { threshold: 0 }
@@ -40,11 +47,9 @@ function WorksSection() {
     }
 
     return () => observer.disconnect();
-  }, [opacity, scale]);
+  }, [opacity, scale, mOpacity, mScale]);
 
-  // Skip the expensive mousemove spring-follow entirely on touch devices —
-  // the floating preview panel is desktop-only (hidden md:block) anyway,
-  // so this saves needless work/jank on Android.
+  // Desktop-only mouse-follow — exact same springs as before
   const handleMouseMove = useCallback(
     (e) => {
       if (isTouch) return;
@@ -85,10 +90,27 @@ function WorksSection() {
     });
   };
 
-  // Touch equivalent: tapping a row toggles the background-reveal effect
-  // (the image preview stays desktop-only, since it's hidden on mobile viewports)
+  // Touch: tapping a row shows the preview automatically (no hover needed)
   const handleTouch = (project) => {
-    setActiveId((prev) => (prev === project.id ? null : project.id));
+    const isSame = activeId === project.id;
+
+    if (isSame) {
+      setActiveId(null);
+      animate(mOpacity, 0, { duration: 0.3 });
+      animate(mScale, 0.95, { duration: 0.3 });
+      return;
+    }
+
+    setActiveId(project.id);
+    setCurrentImage(project.image);
+
+    // Same entrance feel as desktop: fade + spring scale
+    animate(mOpacity, 1, { duration: 0.3 });
+    animate(mScale, 1, {
+      type: "spring",
+      stiffness: 180,
+      damping: 18,
+    });
   };
 
   return (
@@ -157,6 +179,7 @@ function WorksSection() {
         })}
       </div>
 
+      {/* Desktop preview — untouched: same mouse-follow position, springs, sizing */}
       <motion.div
         style={{ x, y, opacity, scale }}
         className="fixed -top-2/6 left-0 z-50 w-[960px] h-[430px] overflow-hidden border-[4px] border-black bg-white pointer-events-none hidden md:block"
@@ -182,6 +205,37 @@ function WorksSection() {
               ease: [0.19, 1, 0.22, 1],
             }}
           />
+        )}
+      </motion.div>
+
+      {/* Mobile preview — auto-shown on tap, centered overlay, same fade/scale feel */}
+      <motion.div
+        style={{ opacity: mOpacity, scale: mScale }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-6 md:hidden pointer-events-none"
+      >
+        {activeId && currentImage && (
+          <div className="relative w-full max-w-[420px] h-[260px] overflow-hidden border-[4px] border-black bg-white shadow-xl">
+            <motion.img
+              key={currentImage}
+              src={currentImage}
+              alt=""
+              className="absolute inset-0 w-full h-full object-contain bg-white"
+              initial={{
+                opacity: 0,
+                scale: 1.08,
+                filter: "blur(12px)",
+              }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                filter: "blur(0px)",
+              }}
+              transition={{
+                duration: 0.7,
+                ease: [0.19, 1, 0.22, 1],
+              }}
+            />
+          </div>
         )}
       </motion.div>
     </section>
