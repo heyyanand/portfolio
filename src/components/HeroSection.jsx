@@ -135,18 +135,9 @@ function PlanetModel({ isVisible, isMobile }) {
 
 useGLTF.preload("/models/Planet.glb");
 
-function CloseIcon() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <line x1="1" y1="1" x2="15" y2="15" stroke="white" strokeWidth="1.5" />
-      <line x1="15" y1="1" x2="1" y2="15" stroke="white" strokeWidth="1.5" />
-    </svg>
-  );
-}
-
 function ArrowIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
       <line x1="5" y1="19" x2="19" y2="5" stroke="currentColor" strokeWidth="2" />
       <polyline points="8 5 19 5 19 16" stroke="currentColor" strokeWidth="2" fill="none" />
     </svg>
@@ -155,7 +146,7 @@ function ArrowIcon() {
 
 function XLogoIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
     </svg>
   );
@@ -163,9 +154,46 @@ function XLogoIcon() {
 
 function LinkedinIcon() {
   return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
       <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1 0-4.124 2.062 2.062 0 0 1 0 4.124zM7.114 20.452H3.558V9h3.556v11.452z" />
     </svg>
+  );
+}
+
+function GmailIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <path
+        fill="none"
+        stroke="#8B8D93"
+        strokeWidth="1.4"
+        d="M3 6.5A1.5 1.5 0 0 1 4.5 5h15A1.5 1.5 0 0 1 21 6.5v11a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5z"
+      />
+      <path fill="#EA4335" d="M3.6 6 12 12.75 20.4 6l.9 1.15-9.3 7.35L2.7 7.15z" />
+    </svg>
+  );
+}
+
+/* ---------- Blinking terminal cursor ---------- */
+function Cursor() {
+  return (
+    <span
+      className="inline-block w-[8px] h-[16px] sm:h-[18px] bg-[#FFB454] ml-1 align-middle"
+      style={{ animation: "term-blink 1s steps(1) infinite" }}
+    />
+  );
+}
+
+/* ---------- A single "$ command" line that reveals in ---------- */
+function TermLine({ children, delay = 0 }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.4, delay, ease: [0.19, 1, 0.22, 1] }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
@@ -178,6 +206,18 @@ function ContactPanel({ isOpen, onClose }) {
     <AnimatePresence>
       {isOpen && (
         <>
+          <style>{`
+            @keyframes term-blink {
+              0%, 49% { opacity: 1; }
+              50%, 100% { opacity: 0; }
+            }
+            @keyframes term-pulse {
+              0% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.55); }
+              70% { box-shadow: 0 0 0 6px rgba(52, 211, 153, 0); }
+              100% { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0); }
+            }
+          `}</style>
+
           <motion.div
             key="backdrop"
             initial={{ opacity: 0 }}
@@ -185,7 +225,7 @@ function ContactPanel({ isOpen, onClose }) {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.35 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[90]"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90]"
           />
 
           <motion.div
@@ -194,59 +234,101 @@ function ContactPanel({ isOpen, onClose }) {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ duration: 0.55, ease: [0.19, 1, 0.22, 1] }}
-            className="fixed top-0 right-0 h-full w-full sm:w-[420px] bg-black text-white z-[100] flex flex-col px-6 sm:px-10 py-8 sm:py-10 overflow-y-auto"
+            onClick={onClose}
+            className="fixed top-0 right-0 h-full w-full sm:w-[440px] z-[100] flex items-center justify-center p-4 sm:p-6"
           >
-            <button
-              onClick={onClose}
-              aria-label="Close contact panel"
-              className="self-end w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/25 transition-colors flex items-center justify-center shrink-0"
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-h-[92vh] overflow-y-auto rounded-lg border border-white/10 shadow-2xl font-mono"
+              style={{ backgroundColor: "#0D0F12" }}
             >
-              <CloseIcon />
-            </button>
-
-            <div className="mt-10 sm:mt-16 flex flex-col gap-10 sm:gap-16">
-              <div>
-                <p className="tracking-[4px] sm:tracking-[6px] text-[12px] sm:text-[13px] text-white/50 mb-5 sm:mb-6">
-                  CONTACT ME
-                </p>
-
-                <a
-                  href={`mailto:${EMAIL}`}
-                  className="group flex items-center justify-between border border-white/20 rounded-xl px-5 sm:px-6 py-4 sm:py-5 hover:border-white/60 hover:bg-white/5 active:bg-white/10 transition-all"
-                >
-                  <span className="text-[18px] sm:text-[22px] tracking-[1px]">SAY HELLO</span>
-                  <span className="group-hover:translate-x-1 transition-transform shrink-0 ml-3">
-                    <ArrowIcon />
-                  </span>
-                </a>
+              {/* Title bar */}
+              <div
+                className="flex items-center gap-2 px-4 py-3 rounded-t-lg border-b border-white/10"
+                style={{ backgroundColor: "#17191D" }}
+              >
+                <button
+                  onClick={onClose}
+                  aria-label="Close contact panel"
+                  className="w-3 h-3 rounded-full bg-[#FF5F57] hover:brightness-110 active:scale-90 transition-all"
+                />
+                <span className="w-3 h-3 rounded-full bg-[#FEBC2E]" />
+                <span className="w-3 h-3 rounded-full bg-[#28C840]" />
+                <span className="ml-3 text-[11px] sm:text-[12px] tracking-wide text-[#8B8D93]">
+                  Contact Me
+                </span>
               </div>
 
-              <div>
-                <p className="tracking-[4px] sm:tracking-[6px] text-[12px] sm:text-[13px] text-white/50 mb-5 sm:mb-6">
-                  CONNECT ME
-                </p>
+              {/* Terminal body */}
+              <div className="px-5 sm:px-7 pt-5 sm:pt-6 pb-8 sm:pb-10 flex flex-col gap-7 sm:gap-9 text-[#ECEAE4]">
+                <TermLine delay={0.1}>
+                  <p className="text-[20px] sm:text-[24px] leading-tight">
+                    Heyy
+                  </p>
+                  <p className="mt-3 text-[13px] sm:text-[14px] text-[#8B8D93]">
+                    Thanks for exploring this button :)
+                  </p>
+                </TermLine>
 
-                <div className="flex items-center gap-4">
+                <TermLine delay={0.3}>
+                  <p className="text-[13px] sm:text-[14px] text-[#8B8D93]">
+                    <span className="text-[#FFB454]">✦</span> I'm just a message away
+                  </p>
                   <a
-                    href={X_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="X profile"
-                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border border-white/20 hover:border-white/60 hover:bg-white/5 active:bg-white/10 transition-all flex items-center justify-center"
+                    href={`mailto:${EMAIL}`}
+                    className="group mt-3 flex items-center justify-between rounded-md border border-white/15 px-4 sm:px-5 py-3 sm:py-4 hover:border-[#FFB454]/70 hover:bg-white/[0.03] active:bg-white/[0.06] transition-all"
                   >
-                    <XLogoIcon />
+                    <span className="flex items-center gap-2.5">
+                      <GmailIcon />
+                      <span className="text-[14px] sm:text-[16px] tracking-tight font-medium">
+                        Email me
+                      </span>
+                    </span>
+                    <span className="ml-3 shrink-0 text-[#FFB454] group-hover:translate-x-1 transition-transform">
+                      <ArrowIcon />
+                    </span>
                   </a>
+                </TermLine>
 
-                  <a
-                    href={LINKEDIN_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="LinkedIn profile"
-                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border border-white/20 hover:border-white/60 hover:bg-white/5 active:bg-white/10 transition-all flex items-center justify-center"
-                  >
-                    <LinkedinIcon />
-                  </a>
-                </div>
+                <TermLine delay={0.5}>
+                  <p className="text-[13px] sm:text-[14px] text-[#8B8D93]">
+                    <span className="text-[#FFB454]">✦</span> Connect with me @
+                  </p>
+                  <div className="mt-3 flex items-center gap-3">
+                    <a
+                      href={X_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="X profile"
+                      className="w-11 h-11 sm:w-12 sm:h-12 rounded-md border border-white/15 hover:border-[#5FD9C5]/70 hover:text-[#5FD9C5] hover:bg-white/[0.03] active:bg-white/[0.06] transition-all flex items-center justify-center"
+                    >
+                      <XLogoIcon />
+                    </a>
+                    <a
+                      href={LINKEDIN_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label="LinkedIn profile"
+                      className="w-11 h-11 sm:w-12 sm:h-12 rounded-md border border-white/15 hover:border-[#5FD9C5]/70 hover:text-[#5FD9C5] hover:bg-white/[0.03] active:bg-white/[0.06] transition-all flex items-center justify-center"
+                    >
+                      <LinkedinIcon />
+                    </a>
+                  </div>
+                </TermLine>
+
+                <TermLine delay={0.7}>
+                  <p className="text-[13px] sm:text-[14px] text-[#8B8D93]">
+                    <span className="text-[#FFB454]">✦</span> Current status
+                  </p>
+                  <p className="mt-2 flex items-center gap-2 text-[13px] sm:text-[14px]">
+                    <span
+                      className="w-2 h-2 rounded-full bg-[#34D399]"
+                      style={{ animation: "term-pulse 2s infinite" }}
+                    />
+                    available for new projects
+                    <Cursor />
+                  </p>
+                </TermLine>
               </div>
             </div>
           </motion.div>
