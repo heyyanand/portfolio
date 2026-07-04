@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
+import emailjs from "@emailjs/browser";
 
 // ---------------------------------------------------------------------------
 // Icons (inline SVG, no extra dependency)
@@ -99,17 +100,34 @@ function ContactMe() {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!formData.name || !formData.email || !formData.message) return;
 
     setStatus("sending");
-    // Wire this up to your backend / email service of choice.
-    setTimeout(() => {
+
+    try {
+      await emailjs.send(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        {
+          from_name: formData.name,
+          from_email: formData.email,
+          message: formData.message,
+        },
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+      );
+
       setStatus("sent");
       setFormData({ name: "", email: "", message: "" });
+
       setTimeout(() => setStatus("idle"), 3500);
-    }, 1100);
+    } catch (error) {
+      console.error("EmailJS Error:", error);
+      alert("Failed to send message. Please try again.");
+      setStatus("idle");
+    }
   };
 
   return (
@@ -168,7 +186,7 @@ function ContactMe() {
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`group flex items-center justify-between gap-6 rounded-full border-2 border-white/15 bg-white/[0.03] backdrop-blur-xl px-6 py-4 transition-all duration-300 ${social.glow}`}
+                    className={`group flex items-center justify-between gap-6 rounded-lg border-2 border-white/15 bg-white/[0.03] backdrop-blur-xl px-6 py-4 transition-all duration-300 ${social.glow}`}
                   >
                     <span className="flex items-center gap-4">
                       <social.Icon className="w-5 h-5 text-white/80 group-hover:text-white transition-colors" />
