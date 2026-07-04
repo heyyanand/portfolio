@@ -19,15 +19,15 @@ const LinkedInIcon = (props) => (
 
 const socials = [
   {
-    name: "X / Twitter",
-    handle: "@heyyyyanand",
+    name: "Twitter",
+    handle: "",
     href: "https://x.com/heyyyyanand",
     Icon: XIcon,
     glow: "hover:shadow-[0_0_40px_rgba(236,72,153,0.35)] hover:border-pink-500/60",
   },
   {
     name: "LinkedIn",
-    handle: "/in/heyanand",
+    handle: "",
     href: "https://www.linkedin.com/in/heyanand/",
     Icon: LinkedInIcon,
     glow: "hover:shadow-[0_0_40px_rgba(59,130,246,0.35)] hover:border-blue-500/60",
