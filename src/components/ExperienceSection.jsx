@@ -1,6 +1,45 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
+import { gsap } from "gsap";
 import anandImage from "../assets/anand.jpg";
+
+// ---------------------------------------------------------------------------
+// Magnetic wrapper — pulls its child gently toward the cursor on hover.
+// ---------------------------------------------------------------------------
+function Magnetic({ children, strength = 0.35 }) {
+  const ref = useRef(null);
+
+  const handleMouseMove = (e) => {
+    const el = ref.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const relX = e.clientX - rect.left - rect.width / 2;
+    const relY = e.clientY - rect.top - rect.height / 2;
+    gsap.to(el, {
+      x: relX * strength,
+      y: relY * strength,
+      duration: 0.6,
+      ease: "power3.out",
+    });
+  };
+
+  const handleMouseLeave = () => {
+    const el = ref.current;
+    if (!el) return;
+    gsap.to(el, { x: 0, y: 0, duration: 0.6, ease: "elastic.out(1, 0.4)" });
+  };
+
+  return (
+    <div
+      ref={ref}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className="inline-block will-change-transform"
+    >
+      {children}
+    </div>
+  );
+}
 
 const experiences = [
   {
@@ -207,18 +246,19 @@ function ExperienceSection() {
 
               <div className="mb-5 sm:mb-6 border-t border-white/15 relative z-10" />
 
-              <div className="flex flex-wrap gap-2 sm:gap-2.5 relative z-10">
+              <div className="flex flex-wrap gap-3 sm:gap-5 relative z-10">
                 {group.items.map((item) => (
-                  <motion.span
-                    key={item}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    whileInView={{ opacity: 1, scale: 1 }}
-                    viewport={{ once: false }}
-                    transition={{ duration: 0.35 }}
-                    className="px-3.5 sm:px-4 py-1.5 rounded-full text-[13px] sm:text-sm text-white/80 bg-white/5 border border-white/15"
-                  >
-                    {item}
-                  </motion.span>
+                  <Magnetic key={item} strength={0.25}>
+                    <motion.span
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ once: false }}
+                      transition={{ duration: 0.35 }}
+                      className="inline-block px-3.5 sm:px-4 py-1.5 rounded-lg text-[13px] sm:text-sm text-white/80 bg-white/5 border border-white/15 cursor-default"
+                    >
+                      {item}
+                    </motion.span>
+                  </Magnetic>
                 ))}
               </div>
             </motion.div>
