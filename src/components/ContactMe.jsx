@@ -1,6 +1,14 @@
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
+import emailjs from "@emailjs/browser";
+
+// ---------------------------------------------------------------------------
+// EmailJS config — replace with your own IDs from https://dashboard.emailjs.com/
+// ---------------------------------------------------------------------------
+const EMAILJS_SERVICE_ID = "service_xtz1gs6";
+const EMAILJS_TEMPLATE_ID = "template_8h8yqid";
+const EMAILJS_PUBLIC_KEY = "YNVxAHhanQLseo-j8";
 
 // ---------------------------------------------------------------------------
 // Icons (inline SVG, no extra dependency)
@@ -78,9 +86,10 @@ function Magnetic({ children, strength = 0.35 }) {
 function ContactMe() {
   const marqueeRef = useRef(null);
   const sectionRef = useRef(null);
+  const formRef = useRef(null);
 
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
-  const [status, setStatus] = useState("idle"); // idle | sending | sent
+  const [status, setStatus] = useState("idle"); // idle | sending | sent | error
 
   // Infinite marquee, GSAP-driven, seamless via a doubled track.
   useEffect(() => {
@@ -104,12 +113,28 @@ function ContactMe() {
     if (!formData.name || !formData.email || !formData.message) return;
 
     setStatus("sending");
-    // Wire this up to your backend / email service of choice.
-    setTimeout(() => {
-      setStatus("sent");
-      setFormData({ name: "", email: "", message: "" });
-      setTimeout(() => setStatus("idle"), 3500);
-    }, 1100);
+
+    emailjs
+      .send(
+        EMAILJS_SERVICE_ID,
+        EMAILJS_TEMPLATE_ID,
+        {
+          name: formData.name,
+          email: formData.email,
+          message: formData.message,
+        },
+        EMAILJS_PUBLIC_KEY
+      )
+      .then(() => {
+        setStatus("sent");
+        setFormData({ name: "", email: "", message: "" });
+        setTimeout(() => setStatus("idle"), 3500);
+      })
+      .catch((err) => {
+        console.error("EmailJS error:", err);
+        setStatus("error");
+        setTimeout(() => setStatus("idle"), 3500);
+      });
   };
 
   return (
@@ -164,7 +189,7 @@ function ContactMe() {
                 transition={{ duration: 0.5, delay: i * 0.12 }}
               >
                 <Magnetic strength={0.25}>
-                  <a
+                  
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -198,7 +223,7 @@ function ContactMe() {
             Send a message
           </h3>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+          <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-8">
             <div className="grid sm:grid-cols-2 gap-8">
               <label className="flex flex-col gap-2">
                 <span className="text-[11px] uppercase tracking-[2px] text-white/40">
@@ -249,13 +274,14 @@ function ContactMe() {
             <Magnetic strength={0.3}>
               <button
                 type="submit"
-                disabled={status !== "idle"}
+                disabled={status === "sending"}
                 className="relative w-full sm:w-auto px-10 py-4 rounded-full border-2 border-violet-500/60 bg-violet-500/10 text-[16px] font-[300] uppercase tracking-[2px] overflow-hidden transition-colors duration-300 hover:bg-violet-500/20 disabled:opacity-70"
               >
                 <span className="relative z-10">
                   {status === "idle" && "Send message"}
                   {status === "sending" && "Sending..."}
                   {status === "sent" && "Message sent ✦"}
+                  {status === "error" && "Failed, try again"}
                 </span>
               </button>
             </Magnetic>
