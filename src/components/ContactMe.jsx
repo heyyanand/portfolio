@@ -4,11 +4,11 @@ import { gsap } from "gsap";
 import emailjs from "@emailjs/browser";
 
 // ---------------------------------------------------------------------------
-// EmailJS config — replace with your own IDs from https://dashboard.emailjs.com/
+// EmailJS config — pulled from your .env file (Vite exposes only VITE_-prefixed vars)
 // ---------------------------------------------------------------------------
-const EMAILJS_SERVICE_ID = "service_xtz1gs6";
-const EMAILJS_TEMPLATE_ID = "template_8h8yqid";
-const EMAILJS_PUBLIC_KEY = "YNVxAHhanQLseo-j8";
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
 
 // ---------------------------------------------------------------------------
 // Icons (inline SVG, no extra dependency)
@@ -189,7 +189,7 @@ function ContactMe() {
                 transition={{ duration: 0.5, delay: i * 0.12 }}
               >
                 <Magnetic strength={0.25}>
-                  
+                  <a
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
