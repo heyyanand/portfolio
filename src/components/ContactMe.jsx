@@ -1,6 +1,17 @@
 import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
+import emailjs from "@emailjs/browser";
+
+// ---------------------------------------------------------------------------
+// EmailJS config — hardcoded directly (no .env dependency)
+// NOTE: The public key is safe to expose client-side by design.
+// Just make sure "Allowed origins" is restricted to your domain(s)
+// in your EmailJS dashboard: Account -> Security.
+// ---------------------------------------------------------------------------
+const EMAILJS_SERVICE_ID = "service_xtz1gs6";
+const EMAILJS_TEMPLATE_ID = "template_8h8yqid";
+const EMAILJS_PUBLIC_KEY = "SShfXXUmnyvjCPxnf";
 
 // ---------------------------------------------------------------------------
 // Icons (inline SVG, no extra dependency)
@@ -19,15 +30,15 @@ const LinkedInIcon = (props) => (
 
 const socials = [
   {
-    name: "X / Twitter",
-    handle: "@heyyyyanand",
+    name: "Twitter",
+    handle: "",
     href: "https://x.com/heyyyyanand",
     Icon: XIcon,
     glow: "hover:shadow-[0_0_40px_rgba(236,72,153,0.35)] hover:border-pink-500/60",
   },
   {
     name: "LinkedIn",
-    handle: "/in/heyanand",
+    handle: "",
     href: "https://www.linkedin.com/in/heyanand/",
     Icon: LinkedInIcon,
     glow: "hover:shadow-[0_0_40px_rgba(59,130,246,0.35)] hover:border-blue-500/60",
@@ -82,6 +93,11 @@ function ContactMe() {
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
   const [status, setStatus] = useState("idle"); // idle | sending | sent
 
+  // Init EmailJS once with the public key.
+  useEffect(() => {
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+  }, []);
+
   // Infinite marquee, GSAP-driven, seamless via a doubled track.
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -99,17 +115,29 @@ function ContactMe() {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!formData.name || !formData.email || !formData.message) return;
 
     setStatus("sending");
-    // Wire this up to your backend / email service of choice.
-    setTimeout(() => {
+
+    try {
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        from_name: formData.name,
+        from_email: formData.email,
+        message: formData.message,
+      });
+
       setStatus("sent");
       setFormData({ name: "", email: "", message: "" });
+
       setTimeout(() => setStatus("idle"), 3500);
-    }, 1100);
+    } catch (error) {
+      console.error("EmailJS Error:", error);
+      alert("Failed to send message. Please try again.");
+      setStatus("idle");
+    }
   };
 
   return (
@@ -168,7 +196,7 @@ function ContactMe() {
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`group flex items-center justify-between gap-6 rounded-full border-2 border-white/15 bg-white/[0.03] backdrop-blur-xl px-6 py-4 transition-all duration-300 ${social.glow}`}
+                    className={`group flex items-center justify-between gap-6 rounded-lg border-2 border-white/15 bg-white/[0.03] backdrop-blur-xl px-6 py-4 transition-all duration-300 ${social.glow}`}
                   >
                     <span className="flex items-center gap-4">
                       <social.Icon className="w-5 h-5 text-white/80 group-hover:text-white transition-colors" />
