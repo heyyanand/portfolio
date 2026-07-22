@@ -4,13 +4,6 @@ import { gsap } from "gsap";
 import emailjs from "@emailjs/browser";
 
 // ---------------------------------------------------------------------------
-// EmailJS config — pulled from your .env file (Vite exposes only VITE_-prefixed vars)
-// ---------------------------------------------------------------------------
-const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
-
-// ---------------------------------------------------------------------------
 // Icons (inline SVG, no extra dependency)
 // ---------------------------------------------------------------------------
 const XIcon = (props) => (
@@ -86,10 +79,9 @@ function Magnetic({ children, strength = 0.35 }) {
 function ContactMe() {
   const marqueeRef = useRef(null);
   const sectionRef = useRef(null);
-  const formRef = useRef(null);
 
   const [formData, setFormData] = useState({ name: "", email: "", message: "" });
-  const [status, setStatus] = useState("idle"); // idle | sending | sent | error
+  const [status, setStatus] = useState("idle"); // idle | sending | sent
 
   // Infinite marquee, GSAP-driven, seamless via a doubled track.
   useEffect(() => {
@@ -108,33 +100,34 @@ function ContactMe() {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!formData.name || !formData.email || !formData.message) return;
 
     setStatus("sending");
 
-    emailjs
-      .send(
-        EMAILJS_SERVICE_ID,
-        EMAILJS_TEMPLATE_ID,
+    try {
+      await emailjs.send(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
         {
-          name: formData.name,
-          email: formData.email,
+          from_name: formData.name,
+          from_email: formData.email,
           message: formData.message,
         },
-        EMAILJS_PUBLIC_KEY
-      )
-      .then(() => {
-        setStatus("sent");
-        setFormData({ name: "", email: "", message: "" });
-        setTimeout(() => setStatus("idle"), 3500);
-      })
-      .catch((err) => {
-        console.error("EmailJS error:", err);
-        setStatus("error");
-        setTimeout(() => setStatus("idle"), 3500);
-      });
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+      );
+
+      setStatus("sent");
+      setFormData({ name: "", email: "", message: "" });
+
+      setTimeout(() => setStatus("idle"), 3500);
+    } catch (error) {
+      console.error("EmailJS Error:", error);
+      alert("Failed to send message. Please try again.");
+      setStatus("idle");
+    }
   };
 
   return (
@@ -193,7 +186,7 @@ function ContactMe() {
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`group flex items-center justify-between gap-6 rounded-full border-2 border-white/15 bg-white/[0.03] backdrop-blur-xl px-6 py-4 transition-all duration-300 ${social.glow}`}
+                    className={`group flex items-center justify-between gap-6 rounded-lg border-2 border-white/15 bg-white/[0.03] backdrop-blur-xl px-6 py-4 transition-all duration-300 ${social.glow}`}
                   >
                     <span className="flex items-center gap-4">
                       <social.Icon className="w-5 h-5 text-white/80 group-hover:text-white transition-colors" />
@@ -223,7 +216,7 @@ function ContactMe() {
             Send a message
           </h3>
 
-          <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-8">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-8">
             <div className="grid sm:grid-cols-2 gap-8">
               <label className="flex flex-col gap-2">
                 <span className="text-[11px] uppercase tracking-[2px] text-white/40">
@@ -274,14 +267,13 @@ function ContactMe() {
             <Magnetic strength={0.3}>
               <button
                 type="submit"
-                disabled={status === "sending"}
+                disabled={status !== "idle"}
                 className="relative w-full sm:w-auto px-10 py-4 rounded-full border-2 border-violet-500/60 bg-violet-500/10 text-[16px] font-[300] uppercase tracking-[2px] overflow-hidden transition-colors duration-300 hover:bg-violet-500/20 disabled:opacity-70"
               >
                 <span className="relative z-10">
                   {status === "idle" && "Send message"}
                   {status === "sending" && "Sending..."}
                   {status === "sent" && "Message sent ✦"}
-                  {status === "error" && "Failed, try again"}
                 </span>
               </button>
             </Magnetic>
